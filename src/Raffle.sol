@@ -35,6 +35,13 @@ import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2
 contract Raffle is VRFConsumerBaseV2 {
     error Raffle__notEnoughEthSent();
     error Raffle__transferFailed();
+    error Raffle__raffleNotOpen();
+
+    /* Type declarations */
+    enum RaffleState{
+        OPEN,       // 0
+        CALCULATING // 1
+    }
 
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint32 private constant NUM_WORDS = 1;
@@ -49,6 +56,7 @@ contract Raffle is VRFConsumerBaseV2 {
     address payable[] private s_players; // a array that stores addresses of players. stored in storage.
     uint256 private s_lastTimeStamp;
     address private s_recentWinner;
+    RaffleState private s_raffleState;
 
     event EnteredRaffle(address indexed player);
 
@@ -67,6 +75,7 @@ contract Raffle is VRFConsumerBaseV2 {
         i_gasLane = gasLane;
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
+        s_raffleState = RaffleState.OPEN;
     }
 
     function enterRaffle() public payable {
@@ -75,6 +84,9 @@ contract Raffle is VRFConsumerBaseV2 {
         // require(msg.value >= i_entranceFee, "Not enough eth");
         if (msg.value < i_entranceFee) {
             revert Raffle__notEnoughEthSent();
+        }
+        if(s_raffleState != RaffleState.OPEN){
+            revert Raffle__raffleNotOpen(); 
         }
         s_players.push(payable(msg.sender)); // when ebntered the lottery, the players(payable) add will be pushed to array
         // events --> 1. makes migration easier        2. makes front end indexing easier
@@ -91,6 +103,8 @@ contract Raffle is VRFConsumerBaseV2 {
             revert();
         }
 
+        s_raffleState = RaffleState.CALCULATING;
+
         uint256 requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane,
             i_subscriptionId,
@@ -102,11 +116,6 @@ contract Raffle is VRFConsumerBaseV2 {
         // get the random number.
     }
 
-    /** Getter function */
-
-    function getEntranceFee() external view returns (uint256) {
-        return i_entranceFee;
-    }
 
     function fulfillRandomWords(
         uint256 requestId,
@@ -115,6 +124,7 @@ contract Raffle is VRFConsumerBaseV2 {
         uint256 indexOfWinner = randomWords[0] % s_players.length;
         address payable winner = s_players[indexOfWinner];
         s_recentWinner = winner;
+        s_raffleState = RaffleState.OPEN;
         (bool success, ) = winner.call{value : address(this).balance}("");
         if(!success){
             revert Raffle__transferFailed();
