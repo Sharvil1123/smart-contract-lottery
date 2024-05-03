@@ -43,6 +43,10 @@ contract Raffle is VRFConsumerBaseV2 {
         CALCULATING // 1
     }
 
+    // Checks (requires and reverts)
+    // Effects (in our own contract)
+    // Interactions (external contracts)
+
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint32 private constant NUM_WORDS = 1;
 
