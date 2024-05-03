@@ -59,6 +59,7 @@ contract Raffle is VRFConsumerBaseV2 {
     RaffleState private s_raffleState;
 
     event EnteredRaffle(address indexed player);
+    event PickedWinner(address indexed winner);
 
     constructor(
         uint256 entranceFee,
@@ -125,10 +126,13 @@ contract Raffle is VRFConsumerBaseV2 {
         address payable winner = s_players[indexOfWinner];
         s_recentWinner = winner;
         s_raffleState = RaffleState.OPEN;
+        s_players = new address payable [](0);
+        s_lastTimeStamp = block.timestamp;
         (bool success, ) = winner.call{value : address(this).balance}("");
         if(!success){
             revert Raffle__transferFailed();
         }
+        emit PickedWinner(winner);
     }
     /**Getter functions */
     function getEntranceFee() external view returns(uint256){
