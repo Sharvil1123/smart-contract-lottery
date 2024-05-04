@@ -47,6 +47,8 @@ contract Raffle is VRFConsumerBaseV2 {
     // Effects (in our own contract)
     // Interactions (external contracts)
 
+    // done with the wsl
+
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint32 private constant NUM_WORDS = 1;
 
