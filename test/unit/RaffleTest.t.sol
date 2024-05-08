@@ -5,6 +5,7 @@ import {Raffle} from "../../src/Raffle.sol";
 import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
 import {Test, console} from "forge-std/Test.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 contract RaffleTest is Test {
     event EnteredRaffle(address indexed player);
@@ -155,6 +156,29 @@ contract RaffleTest is Test {
         );
 
         raffle.performUpKeep("");
+    }
+
+    modifier raffleEnteredAndTimePassed() {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        _;
+    }   
+
+    // What if I need to test using the output of an event? 
+
+    function testPerformUpKeepUpdatesRaffleStateAndEmitsRequestId() public raffleEnteredAndTimePassed{
+        vm.recordLogs(); // record the emitted logs of the events
+        raffle.performUpKeep("");
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        // all logs are recorded in bytes32 in foundry
+        bytes32 requestId = entries[1].topics[1];
+        Raffle.RaffleState rState = raffle.getRaffleState();
+
+
+        assert(uint256(requestId) > 0);
+        assert(uint256(rState) == 1);
     }
 
 }
