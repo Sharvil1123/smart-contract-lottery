@@ -96,4 +96,7 @@ contract AddConsumer is Script{
         );
         addConsumerUsingConfig(raffle);
     }
+     /**
+      * made alot of changes, but the refactoring is playing with the tests so we will avoid that for now and will deploy on testnet
+      */
 }
